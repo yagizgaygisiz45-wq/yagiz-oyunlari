@@ -5,105 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yağız'ın Oyun Dünyası</title>
     <style>
+        /* Temizleme ve Temel Ayarlar */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
+        /* Canlı ve Hareketli Arka Plan Efekti */
         body {
-            background-color: #121212;
+            background: linear-gradient(-45deg, #121212, #1a1a2e, #16213e, #0f3460);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: #ffffff;
             text-align: center;
             padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Giriş Animasyonları */
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin-top: 40px;
+            animation: fadeInUp 1.2s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Üst Başlık Kartı Efekti */
         header {
-            padding: 40px 20px;
-            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 35px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
+        header:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 255, 102, 0.2);
+            border-color: rgba(0, 255, 102, 0.3);
+        }
+
         h1 {
             font-size: 2.5rem;
-            color: #00ff88;
+            color: #00ff66;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
             margin-bottom: 10px;
         }
+
         p {
-            color: #aaa;
+            color: #b0b0b0;
+            font-size: 1.1rem;
+            line-height: 1.6;
         }
-        .games-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+
+        /* Boş Oyun Alanı - Gelecekteki Oyunlar İçin Efektli Kart */
+        .loading-zone {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px dashed #00ff66;
+            padding: 50px 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+            animation: pulse 2s infinite;
         }
-        .game-card {
-            background: #1e1e1e;
-            border: 2px solid #333;
-            border-radius: 12px;
-            padding: 20px;
-            transition: transform 0.3s, border-color 0.3s;
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.4); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(0, 255, 102, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 102, 0); }
         }
-        .game-card:hover {
-            transform: translateY(-5px);
-            border-color: #00ff88;
-        }
-        .game-icon {
+
+        .loading-icon {
             font-size: 3rem;
             margin-bottom: 15px;
-        }
-        .game-title {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-        .game-desc {
-            font-size: 0.9rem;
-            color: #bbb;
-            margin-bottom: 20px;
-            min-height: 40px;
-        }
-        .play-btn {
             display: inline-block;
-            background: #00ff88;
-            color: #121212;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background 0.2s;
+            animation: spin 3s linear infinite;
         }
-        .play-btn:hover {
-            background: #00cc6e;
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-zone h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        /* Alt Bilgi */
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Yağız'ın Oyun Stüdyosu</h1>
-        <p>Yapay zeka ile birlikte geliştirdiğim mobil ve web oyunları projesi.</p>
-    </header>
+    <div class="container">
+        <!-- Başlık Bölümü -->
+        <header>
+            <h1>Yağız'ın Oyun Stüdyosu</h1>
+            <p>Acode üzerinden geliştirip test ettiğim mobil uyumlu web oyunları çok yakında burada canlı yayında olacak!</p>
+        </header>
 
-    <div class="games-container">
-        <!-- 1. Oyun: Penaltı -->
-        <div class="game-card">
-            <div class="game-icon">⚽</div>
-            <div class="game-title">Penaltı Atışı</div>
-            <div class="game-desc">HTML ve JS ile kodlanmış, refleks tabanlı mobil uyumlu penaltı oyunu.</div>
-            <a href="penalti/index.html" class="play-btn">Oyna</a>
-        </div>
-
-        <!-- 2. Oyun: 3D Simülatör -->
-        <div class="game-card">
-            <div class="game-icon">🚗</div>
-            <div class="game-title">3D Sürüş Simülatörü</div>
-            <div class="game-desc">Acode üzerinde geliştirilen, temel sürüş mekaniklerine sahip simülasyon.</div>
-            <a href="araba/index.html" class="play-btn">Oyna</a>
+        <!-- Oyun Alanı (Şimdilik Beklemede) -->
+        <div class="loading-zone">
+            <span class="loading-icon">⏳</span>
+            <h2>Oyun Laboratuvarı Hazırlanıyor</h2>
+            <p>Şu anda Acode üzerinde yeni projeler test ediliyor. Yeni oyun kodları yüklendiğinde burası otomatik olarak güncellenecektir!</p>
         </div>
     </div>
+
+    <footer>
+        &copy; 2026 - Yağız'ın Oyun Dünyası. Tüm Hakları Saklıdır.
+    </footer>
 
 </body>
 </html>
