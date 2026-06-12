@@ -5,6 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Yağız'ın Oyun Stüdyosu</title>
     
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body { background-color: #0d0f1d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px 10px; overflow-y: auto; }
+        
+        .main-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* YAĞIZ'IN OYUN STÜDYOSU ÜST KARTINIZ */
+        .studio-card { background: #181b33; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .studio-card h1 { font-size: 32px; color: #00ff66; font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
+        .studio-card p { font-size: 14px; color: #9aa0c4; line-height: 1.5; }
+        
+        /* OYUNUN YERLEŞTİRİLDİĞİ ANA LABORATUVAR KUTUSU */
+        .lab-card { background: #131528; border: 2px dashed #00ff66; border-radius: 16px; padding: 12px; box-shadow: 0 0 25px rgba(0, 255, 102, 0.15); display: flex; flex-direction: column; align-items: center; }
+        
+        /* OYUN SAHNESİ */
+        #gameStage { 
+            width: 100%; height: 320px; 
+            background: linear-gradient(180deg, #14072b 0%, #05020c 100%); 
+            border-bottom: 6px solid #00ff66; border-radius: 12px; position: relative; overflow: hidden; 
+        }
+        
+        #player { width: 34px; height: 34px; background-color: #00ff66; border: 3px solid #ffffff; position: absolute; bottom: 0; left: 60px; border-radius: 4px; z-index: 5; display: none; }
+        
+        /* ENGELLER */
+        .obstacle { position: absolute; bottom: 0; }
+        .spike-s { width: 0; height: 0; border-left: 17px solid transparent; border-right: 17px solid transparent; border-bottom: 34px solid #ff0055; }
+        .spike-d { width: 68px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 40"><polygon points="0,40 18,0 36,40" fill="%23ff00ff"/><polygon points="36,40 54,0 72,40" fill="%23ff00ff"/></svg>') no-repeat; background-size: contain; }
+        .spike-triple { width: 102px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 40"><polygon points="0,40 18,0 36,40" fill="%23ff3300"/><polygon points="36,40 54,0 72,40" fill="%23ff3300"/><polygon points="72,40 90,0 108,40" fill="%23ff3300"/></svg>') no-repeat; background-size: contain; }
+        .block-o { width: 34px; height: 34px; background-color: #00ffff; border: 2px solid #ffffff; border-radius: 4px; }
+        .block-high { width: 34px; height: 62px; background-color: #ffaa00; border: 2px solid #ffffff; border-radius: 4px; }
+        
+        /* PARLAYAN YILDIZ */
+        .star { 
+            position: absolute; width: 22px; height: 22px; background: #ffff00; 
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); 
+            z-index: 4; animation: starRotate 1.2s infinite linear; 
+        }
+        @keyframes starRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* SKOR PANELI */
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; color: #ffffff; font-size: 12px; font-weight: bold; z-index: 10; display: none; }
+        .hud-yellow { color: #ffff00; }
+        
+        /* PANELLER */
+        .panel { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(13, 13, 30, 0.97); display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 20; padding: 15px; text-align: center;
+        }
+        
+        .panel h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; color: #00ff66; }
+        .btn { padding: 10px 24px; font-size: 14px; font-weight: bold; border: none; border-radius: 20px; cursor: pointer; margin: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-green { background: #00ff66; color: #000; }
+        .btn-blue { background: #00ffff; color: #000; }
+        
+        .shop-container { display: flex; gap: 6px; margin: 10px 0; max-width: 100%; overflow-x: auto; padding: 5px; width: 100%; justify-content: flex-start; }
+        .shop-item { background: #1c1e36; border: 1px solid #333; border-radius: 8px; padding: 8px; min-width: 85px; text-align: center; font-size: 11px; flex-shrink: 0; }
+        .shop-item p { margin-bottom: 5px; font-weight: bold; color: #ccc; }
+        .shop-btn { padding: 4px 6px; font-size: 10px; border: none; border-radius: 4px; background: #ffff00; color: #000; font-weight: bold; width: 100%; }
+        .shop-btn.owned { background: #444; color: #fff; }
+
+        .footer { text-align: center; font-size: 12px; color: #50567a; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="studio-card">
+            <h1>Yağız'ın Oyun Stüdyosu</h1>
+            <p>Acode üzerinden geliştirip test ettiğim mobil uyumlu web oyunları şimdi tamamen canlı yayında!</p>
+        </div>
+
+        <div class="lab-card">
+            
+            <div id="gameStage">
+                <div id="hud">
+                    <div id="scoreTxt">SKOR: 0</div>
+                    <div id="bestTxt">REKOR: 0</div>
+                    <div id="starTxt" class="hud-yellow">⭐ YILDIZ: 0</div>
+                </div>
+
+                <div id="player"></div>
+
+                <div id="lobbyPanel" class="panel">
+                    <h2>GEOMETRY DASH</h2>
+                    <p style="color: #696e93; font-size: 11px; margin-bottom: 12px;">Süper Optimize Pro Edition v3.0</p>
+                    <button class="btn btn-green" onclick="startGame()">OYUNA BAŞLA</button>
+                    <button class="btn btn-blue" onclick="openShop()">MAĞAZA (SHOP)</button>
+                </div>
+
+                <div id="shopPanel" class="panel" style="display:none;">
+                    <h2>YILDIZ MAĞAZASI</h2>
+                    <div id="shopStarCount" class="hud-yellow" style="font-weight: bold; font-size:13px; margin-bottom:5px;">⭐ Yıldızların: 0</div>
+                    
+                    <div class="shop-container">
+                        <div class="shop-item">
+                            <p style="color:#00ffff;">Mavi Renk</p>
+                            <button id="btn-color-blue" class="shop-btn" onclick="buyItem('color-blue', 5)">5 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ff00ff;">Pembe Renk</p>
+                            <button id="btn-color-pink" class="shop-btn" onclick="buyItem('color-pink', 10)">10 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ffaa00;">Altın Renk</p>
+                            <button id="btn-color-gold" class="shop-btn" onclick="buyItem('color-gold', 15)">15 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#00ff66;">Hiper Zıpla</p>
+                            <button id="btn-power-jump" class="shop-btn" onclick="buyItem('power-jump', 20)">20 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ffff00;">Mıknatıs</p>
+                            <button id="btn-power-magnet" class="shop-btn" onclick="buyItem('power-magnet', 25)">25 ⭐</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-blue" onclick="closeShop()" style="padding: 5px 15px; font-size:12px;">LOBİYE DÖN</button>
+                </div>
+
+                <div id="gameOverScreen" class="panel" style="display:none;">
+                    <h2 style="color: #ff0055;">PATLADIN!</h2>
+                    <p id="finalScore" style="color: #fff; margin-bottom: 10px; font-size:14px;">Skorun: 0</p>
+                    <button class="btn btn-green" onclick="restartToLobby()">LOBİYE DÖN</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            © 2026 - Yağız'ın Oyun Dünyası. Tüm Hakları Saklıdır.
+        </div>
+
+    </div>
+
     <script>
         let stage, player, hud, scoreTxt, bestTxt, starTxt;
         let lobbyPanel, shopPanel, gameOverScreen, finalScore, shopStarCount;
@@ -271,137 +407,4 @@
         function resetGameEngine() {
             obstacles.forEach(o => o.remove()); obstacles = [];
             stars.forEach(s => s.remove()); stars = [];
-            isGameOver = false; score = 0; gameSpeed = 6; position = 0; rotation = 0;
-            player.style.bottom = '0px'; player.style.transform = 'rotate(0deg)';
-            player.style.display = 'block';
-            generateSequence();
-            updateHUD();
-            spawnLoop();
-            gameEngine();
-        }
-    </script>
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body { background-color: #0d0f1d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px 10px; overflow-y: auto; }
-        
-        .main-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* YAĞIZ'IN OYUN STÜDYOSU ÜST KARTINIZ */
-        .studio-card { background: #181b33; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .studio-card h1 { font-size: 32px; color: #00ff66; font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
-        .studio-card p { font-size: 14px; color: #9aa0c4; line-height: 1.5; }
-        
-        /* OYUNUN YERLEŞTİRİLDİĞİ ANA LABORATUVAR KUTUSU */
-        .lab-card { background: #131528; border: 2px dashed #00ff66; border-radius: 16px; padding: 12px; box-shadow: 0 0 25px rgba(0, 255, 102, 0.15); display: flex; flex-direction: column; align-items: center; }
-        
-        /* OYUN SAHNESİ (TAM KUTUYA UYUMLU) */
-        #gameStage { 
-            width: 100%; height: 320px; 
-            background: linear-gradient(180deg, #14072b 0%, #05020c 100%); 
-            border-bottom: 6px solid #00ff66; border-radius: 12px; position: relative; overflow: hidden; 
-        }
-        
-        #player { width: 34px; height: 34px; background-color: #00ff66; border: 3px solid #ffffff; position: absolute; bottom: 0; left: 60px; border-radius: 4px; z-index: 5; display: none; }
-        
-        /* ENGELLER */
-        .obstacle { position: absolute; bottom: 0; }
-        .spike-s { width: 0; height: 0; border-left: 17px solid transparent; border-right: 17px solid transparent; border-bottom: 34px solid #ff0055; }
-        .spike-d { width: 68px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 40"><polygon points="0,40 18,0 36,40" fill="%23ff00ff"/><polygon points="36,40 54,0 72,40" fill="%23ff00ff"/></svg>') no-repeat; background-size: contain; }
-        .spike-triple { width: 102px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 40"><polygon points="0,40 18,0 36,40" fill="%23ff3300"/><polygon points="36,40 54,0 72,40" fill="%23ff3300"/><polygon points="72,40 90,0 108,40" fill="%23ff3300"/></svg>') no-repeat; background-size: contain; }
-        .block-o { width: 34px; height: 34px; background-color: #00ffff; border: 2px solid #ffffff; border-radius: 4px; }
-        .block-high { width: 34px; height: 62px; background-color: #ffaa00; border: 2px solid #ffffff; border-radius: 4px; }
-        
-        /* PARLAYAN YILDIZ */
-        .star { 
-            position: absolute; width: 22px; height: 22px; background: #ffff00; 
-            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); 
-            z-index: 4; animation: starRotate 1.2s infinite linear; 
-        }
-        @keyframes starRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
-        /* SKOR PANELI */
-        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; color: #ffffff; font-size: 12px; font-weight: bold; z-index: 10; display: none; }
-        .hud-yellow { color: #ffff00; }
-        
-        /* OYUN İÇİ PANELLER */
-        .panel { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(13, 13, 30, 0.97); display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 20; padding: 15px; text-align: center;
-        }
-        
-        .panel h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; color: #00ff66; }
-        .btn { padding: 10px 24px; font-size: 14px; font-weight: bold; border: none; border-radius: 20px; cursor: pointer; margin: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .btn-green { background: #00ff66; color: #000; }
-        .btn-blue { background: #00ffff; color: #000; }
-        
-        .shop-container { display: flex; gap: 6px; margin: 10px 0; max-width: 100%; overflow-x: auto; padding: 5px; width: 100%; justify-content: flex-start; }
-        .shop-item { background: #1c1e36; border: 1px solid #333; border-radius: 8px; padding: 8px; min-width: 85px; text-align: center; font-size: 11px; flex-shrink: 0; }
-        .shop-item p { margin-bottom: 5px; font-weight: bold; color: #ccc; }
-        .shop-btn { padding: 4px 6px; font-size: 10px; border: none; border-radius: 4px; background: #ffff00; color: #000; font-weight: bold; width: 100%; }
-        .shop-btn.owned { background: #444; color: #fff; }
-
-        .footer { text-align: center; font-size: 12px; color: #50567a; margin-top: 5px; }
-    </style>
-</head>
-<body>
-
-    <div class="main-container">
-        
-        <div class="studio-card">
-            <h1>Yağız'ın Oyun Stüdyosu</h1>
-            <p>Acode üzerinden geliştirip test ettiğim mobil uyumlu web oyunları şimdi tamamen canlı yayında!</p>
-        </div>
-
-        <div class="lab-card">
-            
-            <div id="gameStage">
-                <div id="hud">
-                    <div id="scoreTxt">SKOR: 0</div>
-                    <div id="bestTxt">REKOR: 0</div>
-                    <div id="starTxt" class="hud-yellow">⭐ YILDIZ: 0</div>
-                </div>
-
-                <div id="player"></div>
-
-                <div id="lobbyPanel" class="panel">
-                    <h2>GEOMETRY DASH</h2>
-                    <p style="color: #696e93; font-size: 11px; margin-bottom: 12px;">Süper Optimize Pro Edition v3.0</p>
-                    <button class="btn btn-green" onclick="startGame()">OYUNA BAŞLA</button>
-                    <button class="btn btn-blue" onclick="openShop()">MAĞAZA (SHOP)</button>
-                </div>
-
-                <div id="shopPanel" class="panel" style="display:none;">
-                    <h2>YILDIZ MAĞAZASI</h2>
-                    <div id="shopStarCount" class="hud-yellow" style="font-weight: bold; font-size:13px; margin-bottom:5px;">⭐ Yıldızların: 0</div>
-                    
-                    <div class="shop-container">
-                        <div class="shop-item">
-                            <p style="color:#00ffff;">Mavi Renk</p>
-                            <button id="btn-color-blue" class="shop-btn" onclick="buyItem('color-blue', 5)">5 ⭐</button>
-                        </div>
-                        <div class="shop-item">
-                            <p style="color:#ff00ff;">Pembe Renk</p>
-                            <button id="btn-color-pink" class="shop-btn" onclick="buyItem('color-pink', 10)">10 ⭐</button>
-                        </div>
-                        <div class="shop-item">
-                            <p style="color:#ffaa00;">Altın Renk</p>
-                            <button id="btn-color-gold" class="shop-btn" onclick="buyItem('color-gold', 15)">15 ⭐</button>
-                        </div>
-                        <div class="shop-item">
-                            <p style="color:#00ff66;">Hiper Zıpla</p>
-                            <button id="btn-power-jump" class="shop-btn" onclick="buyItem('power-jump', 20)">20 ⭐</button>
-                        </div>
-                        <div class="shop-item">
-                            <p style="color:#ffff00;">Mıknatıs</p>
-                            <button id="btn-power-magnet" class="shop-btn" onclick="buyItem('power-magnet', 25)">25 ⭐</button>
-                        </div>
-                    </div>
-                    
-                    <button class="btn btn-blue" onclick="closeShop()" style="padding: 5px 15px; font-size:12px;">LOBİYE DÖN</button>
-                </div>
-
-                <div id="gameOverScreen" class="panel" style="display:none;">
-                    <h2 style="color: #ff0055;">PATLADIN!</h2>
-                    <p id="finalScore" style="
+            isGameOver = false
