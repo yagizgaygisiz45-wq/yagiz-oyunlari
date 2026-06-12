@@ -12,11 +12,13 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Arka Plan ve Kayan Siber Efekt */
+        /* Yeni Arka Plan Görüntüsü ve Siber Efekt */
         body {
-            background: linear-gradient(-45deg, #0b0b10, #11001c, #001220, #02160a);
-            background-size: 400% 400%;
-            animation: gradientBG 12s ease infinite;
+            /* Arka plana bir oyun görseli ekliyoruz */
+            background-image: url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+            background-size: cover; /* Görüntünün ekranı kaplamasını sağlar */
+            background-position: center; /* Görüntünün merkezlenmesini sağlar */
+            background-attachment: fixed; /* Sayfa kaydırılsa bile arka plan sabit kalır */
             color: #ffffff;
             text-align: center;
             padding: 20px;
@@ -40,12 +42,6 @@
             z-index: 0;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
         @keyframes scanline {
             0% { transform: translateY(-100%); }
             100% { transform: translateY(100%); }
@@ -65,7 +61,7 @@
         }
 
         header {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(0, 0, 0, 0.5); /* İçeriğin daha iyi okunması için arka planı biraz koyulaştırıyoruz */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -107,7 +103,7 @@
 
         /* Yeni Siber Parlayan Boş Oyun Alanı */
         .loading-zone {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7); /* İçeriğin daha iyi okunması için arka planı biraz koyulaştırıyoruz */
             border: 2px solid #00ff66;
             padding: 50px 20px;
             border-radius: 24px;
