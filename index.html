@@ -2,177 +2,406 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yağız'ın Oyun Dünyası</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Yağız'ın Oyun Stüdyosu</title>
+    
+    <script>
+        let stage, player, hud, scoreTxt, bestTxt, starTxt;
+        let lobbyPanel, shopPanel, gameOverScreen, finalScore, shopStarCount;
+
+        let isJumping = false, gravity = 0.65, position = 0, score = 0, gameSpeed = 6, isGameOver = false;
+        let obstacles = [], stars = [], gameLoopId = null, obstacleSequence = [];
+        let rotation = 0, spawnTimerId = null;
+
+        let totalStars = parseInt(localStorage.getItem('yd_stars')) || 0;
+        let highScore = parseInt(localStorage.getItem('yd_highscore')) || 0;
+        let activeColor = localStorage.getItem('yd_color') || '#00ff66';
+        let ownedItems = JSON.parse(localStorage.getItem('yd_owned')) || ['color-green'];
+        let activePowerUps = { jump: false, magnet: false };
+
+        const levelPresets = [
+            {type: 'spike-s', y: 0}, {type: 'star', y: 80}, {type: 'spike-d', y: 0},
+            {type: 'block-o', y: 0}, {type: 'star', y: 60}, {type: 'spike-s', y: 0},
+            {type: 'block-high', y: 0}, {type: 'star', y: 120}, {type: 'spike-s', y: 0},
+            {type: 'spike-triple', y: 0}, {type: 'star', y: 90}, {type: 'block-o', y: 0},
+            {type: 'block-high', y: 0}, {type: 'spike-d', y: 0}, {type: 'star', y: 70},
+            {type: 'spike-s', y: 0}, {type: 'block-o', y: 0}, {type: 'spike-s', y: 0},
+            {type: 'star', y: 130}, {type: 'spike-triple', y: 0}, {type: 'star', y: 100}
+        ];
+
+        window.onload = function() {
+            stage = document.getElementById('gameStage');
+            player = document.getElementById('player');
+            hud = document.getElementById('hud');
+            scoreTxt = document.getElementById('scoreTxt');
+            bestTxt = document.getElementById('bestTxt');
+            starTxt = document.getElementById('starTxt');
+            lobbyPanel = document.getElementById('lobbyPanel');
+            shopPanel = document.getElementById('shopPanel');
+            gameOverScreen = document.getElementById('gameOverScreen');
+            finalScore = document.getElementById('finalScore');
+            shopStarCount = document.getElementById('shopStarCount');
+
+            window.addEventListener('touchstart', (e) => { 
+                if(hud && hud.style.display === 'flex' && e.target.closest('#gameStage')) jump(); 
+            });
+            window.addEventListener('keydown', (e) => { 
+                if(e.code === 'Space' && hud && hud.style.display === 'flex') jump(); 
+            });
+
+            updateHUD();
+        };
+
+        function updateHUD() {
+            if(!scoreTxt) return;
+            scoreTxt.innerText = "SKOR: " + score;
+            bestTxt.innerText = "REKOR: " + highScore;
+            starTxt.innerText = "⭐ YILDIZ: " + totalStars;
+            player.style.backgroundColor = activeColor;
+            player.style.boxShadow = `0 0 10px ${activeColor}`;
+        }
+
+        function openShop() {
+            lobbyPanel.style.display = 'none';
+            shopPanel.style.display = 'flex';
+            shopStarCount.innerText = "⭐ Yıldızların: " + totalStars;
+            renderShopButtons();
+        }
+
+        function closeShop() {
+            shopPanel.style.display = 'none';
+            lobbyPanel.style.display = 'flex';
+        }
+
+        function renderShopButtons() {
+            const items = {
+                'color-blue': { cost: 5, color: '#00ffff' },
+                'color-pink': { cost: 10, color: '#ff00ff' },
+                'color-gold': { cost: 15, color: '#ffaa00' },
+                'power-jump': { cost: 20 },
+                'power-magnet': { cost: 25 }
+            };
+            for (let id in items) {
+                let btn = document.getElementById('btn-' + id);
+                if (btn && ownedItems.includes(id)) {
+                    btn.innerText = "KUŞAN";
+                    btn.classList.add('owned');
+                    if (id.startsWith('color-') && activeColor === items[id].color) btn.innerText = "KUŞANDIN";
+                    if (id === 'power-jump' && activePowerUps.jump) btn.innerText = "AKTİF";
+                    if (id === 'power-magnet' && activePowerUps.magnet) btn.innerText = "AKTİF";
+                }
+            }
+        }
+
+        function buyItem(id, cost) {
+            let colors = {'color-blue': '#00ffff', 'color-pink': '#ff00ff', 'color-gold': '#ffaa00'};
+            if (ownedItems.includes(id)) {
+                if (id.startsWith('color-')) {
+                    activeColor = colors[id];
+                    localStorage.setItem('yd_color', activeColor);
+                } else if (id === 'power-jump') {
+                    activePowerUps.jump = !activePowerUps.jump;
+                } else if (id === 'power-magnet') {
+                    activePowerUps.magnet = !activePowerUps.magnet;
+                }
+                renderShopButtons();
+                updateHUD();
+                return;
+            }
+            if (totalStars >= cost) {
+                totalStars -= cost;
+                ownedItems.push(id);
+                localStorage.setItem('yd_stars', totalStars);
+                localStorage.setItem('yd_owned', JSON.stringify(ownedItems));
+                shopStarCount.innerText = "⭐ Yıldızların: " + totalStars;
+                renderShopButtons();
+                updateHUD();
+            }
+        }
+
+        function startGame() {
+            lobbyPanel.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            hud.style.display = 'flex';
+            player.style.display = 'block';
+            resetGameEngine();
+        }
+
+        function jump() {
+            if (isJumping || isGameOver) return;
+            isJumping = true;
+            let jumpSpeed = activePowerUps.jump ? 15 : 12.5;
+
+            let jInt = setInterval(() => {
+                if (jumpSpeed > 0) {
+                    position += jumpSpeed;
+                    jumpSpeed -= gravity;
+                    player.style.bottom = position + 'px';
+                    rotation += 8;
+                    player.style.transform = `rotate(${rotation}deg)`;
+                } else {
+                    let fallSpeed = 0;
+                    let fInt = setInterval(() => {
+                        if (position > 0) {
+                            position -= fallSpeed;
+                            fallSpeed += gravity;
+                            if(position < 0) position = 0;
+                            player.style.bottom = position + 'px';
+                            rotation += 8;
+                            player.style.transform = `rotate(${rotation}deg)`;
+                        } else {
+                            clearInterval(fInt);
+                            isJumping = false;
+                            rotation = Math.round(rotation / 90) * 90;
+                            player.style.transform = `rotate(${rotation}deg)`;
+                        }
+                    }, 20);
+                    clearInterval(jInt);
+                }
+            }, 20);
+        }
+
+        function generateSequence() {
+            obstacleSequence = [];
+            for (let i = 0; i < 30; i++) {
+                obstacleSequence.push(levelPresets[Math.floor(Math.random() * levelPresets.length)]);
+            }
+        }
+
+        function spawnLoop() {
+            if (isGameOver) return;
+            if (obstacleSequence.length === 0) generateSequence();
+
+            let currentItem = obstacleSequence.shift();
+
+            if (currentItem.type === 'star') {
+                let star = document.createElement('div');
+                star.className = 'star';
+                star.style.right = '-40px';
+                star.style.bottom = currentItem.y + 'px';
+                stage.appendChild(star);
+                stars.push(star);
+            } else {
+                let obs = document.createElement('div');
+                obs.className = 'obstacle ' + currentItem.type;
+                obs.style.right = '-100px';
+                stage.appendChild(obs);
+                obstacles.push(obs);
+            }
+
+            let nextTime = Math.random() * 1100 + 850 - (gameSpeed * 30);
+            if (nextTime < 650) nextTime = 650;
+            spawnTimerId = setTimeout(spawnLoop, nextTime);
+        }
+
+        function gameEngine() {
+            if (isGameOver) return;
+
+            obstacles.forEach((obs, index) => {
+                let right = parseInt(obs.style.right) || 0;
+                right += gameSpeed;
+                obs.style.right = right + 'px';
+
+                let width = obs.classList.contains('spike-triple') ? 100 : (obs.classList.contains('spike-d') ? 72 : 36);
+
+                if (right > stage.offsetWidth + 100) {
+                    obs.remove(); obstacles.splice(index, 1);
+                    score++;
+                    if (score > highScore) { highScore = score; localStorage.setItem('yd_highscore', highScore); }
+                    if (score % 5 === 0) gameSpeed += 0.4;
+                    updateHUD();
+                }
+
+                let pLeft = player.offsetLeft, pWidth = 38;
+                let oLeft = stage.offsetWidth - right - width;
+                let oHeight = obs.offsetHeight || 36;
+
+                if ((oLeft < pLeft + pWidth - 6) && (oLeft + width > pLeft + 6) && (position < oHeight)) {
+                    endGame();
+                }
+            });
+
+            stars.forEach((star, index) => {
+                let right = parseInt(star.style.right) || 0;
+                let starLeft = stage.offsetWidth - right - 24;
+                let starBottom = parseInt(star.style.bottom);
+
+                if (activePowerUps.magnet && starLeft - player.offsetLeft < 140 && starLeft > player.offsetLeft) {
+                    right += gameSpeed + 3;
+                    if (starBottom < position) starBottom += 3;
+                    if (starBottom > position) starBottom -= 3;
+                    star.style.bottom = starBottom + 'px';
+                } else {
+                    right += gameSpeed;
+                }
+                
+                star.style.right = right + 'px';
+
+                if (right > stage.offsetWidth + 50) {
+                    star.remove(); stars.splice(index, 1);
+                }
+
+                let pLeft = player.offsetLeft;
+                if ((starLeft < pLeft + 38) && (starLeft + 24 > pLeft) && (Math.abs(starBottom - position) < 38)) {
+                    star.remove(); stars.splice(index, 1);
+                    totalStars++;
+                    localStorage.setItem('yd_stars', totalStars);
+                    updateHUD();
+                }
+            });
+
+            gameLoopId = requestAnimationFrame(gameEngine);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            cancelAnimationFrame(gameLoopId);
+            clearTimeout(spawnTimerId);
+            player.style.display = 'none';
+            finalScore.innerText = "Skorun: " + score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function restartToLobby() {
+            gameOverScreen.style.display = 'none';
+            hud.style.display = 'none';
+            lobbyPanel.style.display = 'flex';
+        }
+
+        function resetGameEngine() {
+            obstacles.forEach(o => o.remove()); obstacles = [];
+            stars.forEach(s => s.remove()); stars = [];
+            isGameOver = false; score = 0; gameSpeed = 6; position = 0; rotation = 0;
+            player.style.bottom = '0px'; player.style.transform = 'rotate(0deg)';
+            player.style.display = 'block';
+            generateSequence();
+            updateHUD();
+            spawnLoop();
+            gameEngine();
+        }
+    </script>
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body { background-color: #0d0f1d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px 10px; overflow-y: auto; }
+        
+        .main-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* YAĞIZ'IN OYUN STÜDYOSU ÜST KARTINIZ */
+        .studio-card { background: #181b33; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .studio-card h1 { font-size: 32px; color: #00ff66; font-weight: 800; margin-bottom: 10px; text-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
+        .studio-card p { font-size: 14px; color: #9aa0c4; line-height: 1.5; }
+        
+        /* OYUNUN YERLEŞTİRİLDİĞİ ANA LABORATUVAR KUTUSU */
+        .lab-card { background: #131528; border: 2px dashed #00ff66; border-radius: 16px; padding: 12px; box-shadow: 0 0 25px rgba(0, 255, 102, 0.15); display: flex; flex-direction: column; align-items: center; }
+        
+        /* OYUN SAHNESİ (TAM KUTUYA UYUMLU) */
+        #gameStage { 
+            width: 100%; height: 320px; 
+            background: linear-gradient(180deg, #14072b 0%, #05020c 100%); 
+            border-bottom: 6px solid #00ff66; border-radius: 12px; position: relative; overflow: hidden; 
         }
+        
+        #player { width: 34px; height: 34px; background-color: #00ff66; border: 3px solid #ffffff; position: absolute; bottom: 0; left: 60px; border-radius: 4px; z-index: 5; display: none; }
+        
+        /* ENGELLER */
+        .obstacle { position: absolute; bottom: 0; }
+        .spike-s { width: 0; height: 0; border-left: 17px solid transparent; border-right: 17px solid transparent; border-bottom: 34px solid #ff0055; }
+        .spike-d { width: 68px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 40"><polygon points="0,40 18,0 36,40" fill="%23ff00ff"/><polygon points="36,40 54,0 72,40" fill="%23ff00ff"/></svg>') no-repeat; background-size: contain; }
+        .spike-triple { width: 102px; height: 34px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 40"><polygon points="0,40 18,0 36,40" fill="%23ff3300"/><polygon points="36,40 54,0 72,40" fill="%23ff3300"/><polygon points="72,40 90,0 108,40" fill="%23ff3300"/></svg>') no-repeat; background-size: contain; }
+        .block-o { width: 34px; height: 34px; background-color: #00ffff; border: 2px solid #ffffff; border-radius: 4px; }
+        .block-high { width: 34px; height: 62px; background-color: #ffaa00; border: 2px solid #ffffff; border-radius: 4px; }
+        
+        /* PARLAYAN YILDIZ */
+        .star { 
+            position: absolute; width: 22px; height: 22px; background: #ffff00; 
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); 
+            z-index: 4; animation: starRotate 1.2s infinite linear; 
+        }
+        @keyframes starRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* SKOR PANELI */
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; color: #ffffff; font-size: 12px; font-weight: bold; z-index: 10; display: none; }
+        .hud-yellow { color: #ffff00; }
+        
+        /* OYUN İÇİ PANELLER */
+        .panel { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(13, 13, 30, 0.97); display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 20; padding: 15px; text-align: center;
+        }
+        
+        .panel h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; color: #00ff66; }
+        .btn { padding: 10px 24px; font-size: 14px; font-weight: bold; border: none; border-radius: 20px; cursor: pointer; margin: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-green { background: #00ff66; color: #000; }
+        .btn-blue { background: #00ffff; color: #000; }
+        
+        .shop-container { display: flex; gap: 6px; margin: 10px 0; max-width: 100%; overflow-x: auto; padding: 5px; width: 100%; justify-content: flex-start; }
+        .shop-item { background: #1c1e36; border: 1px solid #333; border-radius: 8px; padding: 8px; min-width: 85px; text-align: center; font-size: 11px; flex-shrink: 0; }
+        .shop-item p { margin-bottom: 5px; font-weight: bold; color: #ccc; }
+        .shop-btn { padding: 4px 6px; font-size: 10px; border: none; border-radius: 4px; background: #ffff00; color: #000; font-weight: bold; width: 100%; }
+        .shop-btn.owned { background: #444; color: #fff; }
 
-        /* Yeni Arka Plan Görüntüsü ve Siber Efekt */
-        body {
-            /* Arka plana bir oyun görseli ekliyoruz */
-            background-image: url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1920&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover; /* Görüntünün ekranı kaplamasını sağlar */
-            background-position: center; /* Görüntünün merkezlenmesini sağlar */
-            background-attachment: fixed; /* Sayfa kaydırılsa bile arka plan sabit kalır */
-            color: #ffffff;
-            text-align: center;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Matrix Tarzı Siber Işık Çizgileri Efekti */
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, rgba(0,255,102,0) 0%, rgba(0,255,102,0.05) 50%, rgba(0,255,102,0) 100%);
-            background-size: 100% 20px;
-            animation: scanline 6s linear infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
-            margin-top: 40px;
-            animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 1;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        header {
-            background: rgba(0, 0, 0, 0.5); /* İçeriğin daha iyi okunması için arka planı biraz koyulaştırıyoruz */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 35px 20px;
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            margin-bottom: 30px;
-            transition: all 0.4s ease;
-        }
-
-        header:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 50px rgba(0, 255, 102, 0.25);
-            border-color: rgba(0, 255, 102, 0.4);
-        }
-
-        /* RGB Renk Değiştiren Başlık Efekti */
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #00ff66, #00ffff, #ff007f, #00ff66);
-            background-size: 300% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: rgbText 4s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        @keyframes rgbText {
-            0% { background-position: 0% center; }
-            100% { background-position: 300% center; }
-        }
-
-        p {
-            color: #cccccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        /* Yeni Siber Parlayan Boş Oyun Alanı */
-        .loading-zone {
-            background: rgba(0, 0, 0, 0.7); /* İçeriğin daha iyi okunması için arka planı biraz koyulaştırıyoruz */
-            border: 2px solid #00ff66;
-            padding: 50px 20px;
-            border-radius: 24px;
-            margin-top: 20px;
-            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
-            animation: cyberPulse 2.5s infinite alternate;
-            transition: all 0.3s ease;
-        }
-
-        @keyframes cyberPulse {
-            0% { 
-                box-shadow: 0 0 10px rgba(0, 255, 102, 0.2), inset 0 0 10px rgba(0, 255, 102, 0.1);
-                border-color: #00ff66;
-            }
-            100% { 
-                box-shadow: 0 0 25px rgba(0, 255, 102, 0.6), inset 0 0 20px rgba(0, 255, 102, 0.3);
-                border-color: #00ffff;
-            }
-        }
-
-        .loading-icon {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            display: inline-block;
-            animation: spin 2.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes spin {
-            0% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.2) rotate(180deg); }
-            100% { transform: scale(1) rotate(360deg); }
-        }
-
-        .loading-zone h2 {
-            font-size: 1.6rem;
-            color: #ffffff;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-        }
-
-        footer {
-            margin-top: auto;
-            padding: 25px;
-            color: #555;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            z-index: 1;
-        }
+        .footer { text-align: center; font-size: 12px; color: #50567a; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
+    <div class="main-container">
+        
+        <div class="studio-card">
             <h1>Yağız'ın Oyun Stüdyosu</h1>
-            <p>Acode üzerinden geliştirip test ettiğim mobil uyumlu web oyunları çok yakında burada canlı yayında olacak!</p>
-        </header>
-
-        <div class="loading-zone">
-            <span class="loading-icon">⏳</span>
-            <h2>Oyun Laboratuvarı Hazırlanıyor</h2>
-            <p>Şu anda Acode üzerinde yeni projeler test ediliyor. Yeni oyun kodları yüklendiğinde burası otomatik olarak güncellenecektir!</p>
+            <p>Acode üzerinden geliştirip test ettiğim mobil uyumlu web oyunları şimdi tamamen canlı yayında!</p>
         </div>
-    </div>
 
-    <footer>
-        &copy; 2026 - Yağız'ın Oyun Dünyası. Tüm Hakları Saklıdır.
-    </footer>
+        <div class="lab-card">
+            
+            <div id="gameStage">
+                <div id="hud">
+                    <div id="scoreTxt">SKOR: 0</div>
+                    <div id="bestTxt">REKOR: 0</div>
+                    <div id="starTxt" class="hud-yellow">⭐ YILDIZ: 0</div>
+                </div>
 
-</body>
-</html>
+                <div id="player"></div>
+
+                <div id="lobbyPanel" class="panel">
+                    <h2>GEOMETRY DASH</h2>
+                    <p style="color: #696e93; font-size: 11px; margin-bottom: 12px;">Süper Optimize Pro Edition v3.0</p>
+                    <button class="btn btn-green" onclick="startGame()">OYUNA BAŞLA</button>
+                    <button class="btn btn-blue" onclick="openShop()">MAĞAZA (SHOP)</button>
+                </div>
+
+                <div id="shopPanel" class="panel" style="display:none;">
+                    <h2>YILDIZ MAĞAZASI</h2>
+                    <div id="shopStarCount" class="hud-yellow" style="font-weight: bold; font-size:13px; margin-bottom:5px;">⭐ Yıldızların: 0</div>
+                    
+                    <div class="shop-container">
+                        <div class="shop-item">
+                            <p style="color:#00ffff;">Mavi Renk</p>
+                            <button id="btn-color-blue" class="shop-btn" onclick="buyItem('color-blue', 5)">5 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ff00ff;">Pembe Renk</p>
+                            <button id="btn-color-pink" class="shop-btn" onclick="buyItem('color-pink', 10)">10 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ffaa00;">Altın Renk</p>
+                            <button id="btn-color-gold" class="shop-btn" onclick="buyItem('color-gold', 15)">15 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#00ff66;">Hiper Zıpla</p>
+                            <button id="btn-power-jump" class="shop-btn" onclick="buyItem('power-jump', 20)">20 ⭐</button>
+                        </div>
+                        <div class="shop-item">
+                            <p style="color:#ffff00;">Mıknatıs</p>
+                            <button id="btn-power-magnet" class="shop-btn" onclick="buyItem('power-magnet', 25)">25 ⭐</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-blue" onclick="closeShop()" style="padding: 5px 15px; font-size:12px;">LOBİYE DÖN</button>
+                </div>
+
+                <div id="gameOverScreen" class="panel" style="display:none;">
+                    <h2 style="color: #ff0055;">PATLADIN!</h2>
+                    <p id="finalScore" style="
