@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yağız'ın Oyun Dünyası</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        header {
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #aaa;
+        }
+        .games-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background: #1e1e1e;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+        }
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .game-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .game-desc {
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+        .play-btn {
+            display: inline-block;
+            background: #00ff88;
+            color: #121212;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .play-btn:hover {
+            background: #00cc6e;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Yağız'ın Oyun Stüdyosu</h1>
+        <p>Yapay zeka ile birlikte geliştirdiğim mobil ve web oyunları projesi.</p>
+    </header>
+
+    <div class="games-container">
+        <!-- 1. Oyun: Penaltı -->
+        <div class="game-card">
+            <div class="game-icon">⚽</div>
+            <div class="game-title">Penaltı Atışı</div>
+            <div class="game-desc">HTML ve JS ile kodlanmış, refleks tabanlı mobil uyumlu penaltı oyunu.</div>
+            <a href="penalti/index.html" class="play-btn">Oyna</a>
+        </div>
+
+        <!-- 2. Oyun: 3D Simülatör -->
+        <div class="game-card">
+            <div class="game-icon">🚗</div>
+            <div class="game-title">3D Sürüş Simülatörü</div>
+            <div class="game-desc">Acode üzerinde geliştirilen, temel sürüş mekaniklerine sahip simülasyon.</div>
+            <a href="araba/index.html" class="play-btn">Oyna</a>
+        </div>
+    </div>
+
+</body>
+</html>
